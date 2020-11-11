@@ -1,0 +1,405 @@
+---
+title: "Data Transformation"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#5.1 Introduction
+
+###5.1.1 Prerequisites
+
+```{r}
+library(tidyverse)
+
+library(nycflights13)
+
+library(Lahman)
+```
+
+###5.1.2 nycflights13
+
+```{r}
+flights
+```
+
+###5.1.3 dplyr
+
+List of verbs: filter, arrange, select, mutate, summarize
+
+verb(database, function)
+
+#5.2 Filter
+
+Flights that occurred on Jan 1st
+
+```{r}
+filter(flights, month == 1, day == 1)
+```
+
+```{r}
+(jan1 <- filter(flights, month == 1, day == 1))
+```
+
+```{r}
+filter(flights, month == 12, day == 25)
+```
+
+```{r}
+(dec25 <- filter(flights, month == 12, day == 25))
+```
+
+```{r}
+
+```
+
+###5.2.1 Comparisons
+
+==, >, >=, <, <=, !
+
+```{r}
+filter(flights, month = 1)
+```
+
+Error due to using "=" instead of "=="
+
+```{r}
+sin(pi/2)
+```
+
+```{r}
+cos(pi/2) == 0
+```
+
+```{r}
+near(cos(pi/2), 0)
+```
+
+###5.2.2 Logical Operators
+
+or -----> |
+and -----> &
+not -----> !
+
+Flights that departed in Nov **or** Dec
+
+```{r}
+filter(flights, month == 11 | month == 12)
+```
+
+```{r}
+(novdec <- filter(flights, month == 11 | month == 12))
+```
+
+```{r}
+filter(flights, month %in% c(5, 6, 7, 8))
+```
+
+Flights that departed in Nov **and** arrived in Dec
+
+```{r}
+filter(flights, month == 11 & month == 12)
+```
+
+Flights that were not delayed (on departure or arrival) by more than two hours
+
+```{r}
+filter(flights, dep_delay <= 120 & arr_delay <= 120)
+```
+
+Or use the opposite.
+
+```{r}
+filter(flights, !(dep_delay > 120 & arr_delay > 120))
+```
+
+```{r}
+filter(flights, is.na(dep_time))
+filter(flights, !is.na(dep_time))
+withoutNA <- filter(flights, is.na(dep_time))
+withoutNA
+
+filter(withoutNA, is.na(dep_time))
+```
+
+##### Exercises
+
+1. Find all flights that
+
+Had an arrival delay of two or more hours
+Flew to Houston (IAH or HOU)
+Were operated by United, American, or Delta
+Departed in summer (July, August, and September)
+Arrived more than two hours late, but didn’t leave late
+Were delayed by at least an hour, but made up over 30 minutes in flight
+Departed between midnight and 6am (inclusive)
+
+```{r}
+filter(flights, arr_delay >= 120)
+filter(flights, dest == "IAH" | dest == "HOU")
+filter(flights, carrier == "UA" | carrier == "AA" | carrier == "DL")
+filter(flights, month %in% c(7, 8, 9))
+filter(flights, arr_delay > 120 & dep_delay <= 0)
+filter(flights, dep_delay >= 60, dep_delay - arr_delay > 30)
+filter(flights, dep_time >= 0 & dep_time <= 600)
+```
+
+2. Another useful dplyr filtering helper is between(). What does it do? Can you use it to simplify the code needed to answer the previous challenges?
+
+```{r}
+filter(flights, between(dep_time, 0, 600))
+```
+
+3. How many flights have a missing dep_time? What other variables are missing? What might these rows represent?
+
+```{r}
+filter(flights, is.na(dep_time))
+```
+
+8255 flights. Other missing columns include dep_delay, arr_time, arr_delay, air_time. These may be cancelled flights.
+
+4. Why is NA ^ 0 not missing? Why is NA | TRUE not missing? Why is FALSE & NA not missing? Can you figure out the general rule? (NA * 0 is a tricky counterexample!)
+
+```{r}
+
+```
+
+###5.4 Select columns with select()
+
+```{r}
+select(flights, year, month, day)
+select(flights, year:day)
+
+select(flights, -(year:day))
+select(flights, dep_time:time_hour)
+```
+
+```{r}
+select(flights, starts_with('dep'))
+select(flights, ends_with('delay'))
+select(flights, contains('_'))
+```
+
+```{r}
+rename(flights, tail_num = tailnum)
+```
+The rename function changes variable names.
+
+```{r}
+select(flights, dep_delay, arr_delay, everything())
+```
+
+###5.5 Add new variables with mutate()
+
+```{r}
+flights_narrow <- select(flights, year:day, ends_with('delay'), distance, air_time)
+
+flights_narrow
+```
+
+```{r}
+mutate(flights_narrow, gain = dep_delay - arr_delay, speed = distance / air_time * 60)
+
+flights_narrow
+```
+
+The verbs visualize changes but will not remember them. To keep the changes, they must be manually applied to something.
+
+```{r}
+mutate(flights_narrow, gain = dep_delay - arr_delay, speed = distance / air_time * 60, gain_per_hour = gain / air_time * 60)
+```
+
+A new variable can be used again after creating it in the same code chunk but will not show up if not preset to something.
+
+```{r}
+transmute(flights, gain = dep_delay - arr_delay, speed = distance / air_time * 60, gain_per_hour = gain / air_time * 60)
+```
+
+###5.6 Grouped summaries with summarize()
+
+```{r}
+summarize(flights, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+```{r}
+by_day <- group_by(flights, year, month, day)
+
+summarize(by_day, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+```{r}
+by_carrier <- group_by(flights, carrier)
+
+summarize(by_carrier, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+```{r}
+by_origin <- group_by(flights, origin)
+
+summarize(by_origin, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+```{r}
+by_air_time <- group_by(flights, air_time)
+
+summarize(by_air_time, delay = mean(dep_delay, na.rm = TRUE))
+```
+
+This has lots of points and can most likely be plotted.
+
+#####5.6.1 Combining multiple operations with the pipe
+
+```{r}
+by_dest <- group_by(flights, dest)
+```
+
+```{r}
+delays <- summarize(by_dest,
+  count = n(),
+  dist = mean(distance, na.rm = TRUE),
+  delay = mean(arr_delay, na.rm = TRUE)
+)
+
+delays
+```
+
+```{r}
+ggplot(data = delays) + 
+  geom_point(mapping = aes(x = dist, y = delay, size = count))
+```
+
+```{r}
+delays <- filter(delays, count > 20, dest != 'HNL')
+
+delays
+```
+
+The filter function can tidy up the miniscule points and outliers. The cleaned-up plot looks like this:
+
+```{r}
+ggplot(data = delays) + 
+  geom_point(mapping = aes(x = dist, y = delay, size = count))
+```
+
+For cleanup:
+
+```{r}
+ggplot(data = delays, mapping = aes(x = dist, y = delay)) + 
+  geom_point(aes(size = count), alpha = 0.3) + 
+  geom_smooth(se = FALSE) #se = FALSE - deletes the standard error band
+```
+
+```{r}
+delays <- flights %>%
+  group_by(dest) %>%
+  summarize(
+    count = n(), 
+    dist = mean(distance, na.rm = TRUE),
+    delay = mean(arr_delay, na.rm = TRUE),
+  ) %>%
+  filter(count > 20, dest != 'HNL')
+
+ggplot(data = delays, mapping = aes(x = dist, y = delay)) + 
+  geom_point(aes(size = count), alpha = 0.3) + 
+  geom_smooth(se = FALSE)
+```
+
+#####5.6.2 Missing values
+
+na.rm tells us to remove the missin values.
+
+```{r}
+flights %>%
+  group_by(year, month, day) %>%
+  summarize(delay = mean(delay))
+```
+
+```{r}
+flights %>%
+  group_by(year, month, day) %>%
+  summarize(delay = mean(delay, na.rm = TRUE))
+```
+
+```{r}
+
+```
+
+is.na asks the question: is the variable NA?
+
+na.rm gives a command: remove all NAs.
+
+```{r}
+not_cancelled <- flights %>%
+  filter(!is.na(arr_delay) & !is.na(dep_delay))
+
+not_cancelled
+```
+
+#####5.6.3 Counts
+
+```{r}
+delays <- not_cancelled %>%
+  group_by(tailnum) %>%
+  summarize(delay = mean(arr_delay))
+
+delays
+
+arrange(delays, desc(delay))
+```
+
+```{r}
+delays <- not_cancelled %>%
+  group_by(tailnum) %>%
+  summarize(
+    delay = mean(arr_delay),
+    count = n()
+  )
+
+delays
+
+arrange(delays, desc(delay))
+
+ggplot(data = delays) +
+  geom_point(mapping = aes(x = count, y = delay), alpha = 1/3)
+```
+
+```{r}
+delays %>%
+  filter(count > 25) %>%
+  ggplot() + 
+  geom_point(mapping = aes(x = count, y = delay), alpha = 0.2)
+```
+
+```{r}
+Batting
+```
+
+How do we calculate batting average with this data set?
+
+```{r}
+Batting
+
+batters <- Batting %>%
+  group_by(playerID) %>%
+  summarize(
+    ba = sum(H, na.rm = TRUE) / sum(AB, na.rm = TRUE),
+    ab = sum(AB)
+  )
+
+batters %>%
+  filter(ab > 100) %>%
+  ggplot(mapping = aes(x = ab, y = ba)) +
+  geom_point() +
+  geom_smooth(se = FALSE)
+```
+
+```{r}
+
+```
+
+
+
+
+
