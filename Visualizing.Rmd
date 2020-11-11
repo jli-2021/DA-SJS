@@ -1,0 +1,55 @@
+---
+title: "Data Visualization Project"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+summary(cars)
+```
+
+## Including Plots
+
+You can also embed plots, for example:
+
+```{r pressure, echo=FALSE}
+plot(pressure)
+```
+
+Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+WHR2019_2019_1_
+```
+
+###Scatterplot
+
+```{r}
+ggplot(data = WHR2019_2019_1_) + geom_point(mapping = aes(x = Score, y = GDPPerCapita, color = PerceptionsOfCorruption)) + labs(x = "Happiness score", y = "GDP per capita", title = "Happiness Score and GDP", subtitle = "Score is measured on a 0-10 scale", caption = "Source: Kaggle.")
+```
+
+###Barchart
+
+```{r}
+ggplot(data = WHR2019_2019_1_) + geom_bar(mapping = aes(x = Generosity > 0.275, fill = OverallRank < 11), position = "dodge") + labs(x = "Generosity ratings greater than and less than 0.275", y = "Count", title = "Generosity Ratings", subtitle = "Top 10 ranked countries are in blue", caption = "Source: Kaggle")
+```
+
+###Insights
+
+Happiness score has an overall positive correlation with GDP per capita. There are no countries with a happiness score higher than 8 and only one country with a happiness score lower than 3. Perception of corruption tend to be higher in countries with the highest scores.
+
+The bar chart separates the countries with generosity greater than 0.275 and countries with generosity less than 0.275. In total, there are less than 25 countries with generosity greater than 0.275 and more than 125 countries with generosity less than 0.275 There is a greater proportion of countries in the top 10 rankings in countries with generosity greater than 0.275, shown by the dodge and fill functions.
+
